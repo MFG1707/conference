@@ -79,7 +79,7 @@ export default function ConferenceRegistration() {
         {/* Colonne de gauche - Logo seulement */}
         <div className="w-full md:w-1/4 flex justify-center md:justify-start">
           <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit">
-            <div className="w-[300px] h-[180px] relative"> {/* Taille agrandie 6x */}
+            <div className="w-[300px] h-[180px] relative">
               <Image
                 src="/images/carretudiant.jpg"
                 alt="Logo Carrefour Étudiant"
@@ -99,7 +99,7 @@ export default function ConferenceRegistration() {
               Carrefour Étudiant International
             </h1>
             <p className="text-lg text-gray-600">
-              Ouvrez les portes de votre avenir académique à l'étranger
+              Ouvrez les portes de votre avenir académique à l&apos;étranger
             </p>
           </header>
 
@@ -110,7 +110,7 @@ export default function ConferenceRegistration() {
                 Inscription à la Conférence
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Réservez votre place pour découvrir les opportunités d'études à l'international
+                Réservez votre place pour découvrir les opportunités d&apos;études à l&apos;international
               </CardDescription>
             </CardHeader>
             
@@ -160,7 +160,7 @@ export default function ConferenceRegistration() {
                     id="email"
                     type="email"
                     {...register("email", { 
-                      required: "L'email est obligatoire",
+                      required: "L&apos;email est obligatoire",
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                         message: "Adresse email invalide"
@@ -247,7 +247,7 @@ export default function ConferenceRegistration() {
                     </span>
                   ) : (
                     <span className="flex items-center justify-center">
-                      S'inscrire à la conférence
+                      S&apos;inscrire à la conférence
                     </span>
                   )}
                 </Button>
