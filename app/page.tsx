@@ -79,7 +79,7 @@ export default function ConferenceRegistration() {
         {/* Colonne de gauche - Logo seulement */}
         <div className="w-full md:w-1/4 flex justify-center md:justify-start">
           <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit">
-            <div className="w-[300px] h-[180px] relative">
+            <div className="w-[250px] h-[150px] relative">
               <Image
                 src="/images/carretudiant.jpg"
                 alt="Logo Carrefour Étudiant"
