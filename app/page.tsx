@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,10 @@ interface Conference {
   titre: string;
 }
 
+interface ApiResponse {
+  message: string;
+}
+
 export default function ConferenceRegistration() {
   const {
     control,
@@ -40,7 +44,7 @@ export default function ConferenceRegistration() {
   useEffect(() => {
     const fetchConferences = async () => {
       try {
-        const response = await axios.get("./api/conferences");
+        const response = await axios.get<Conference[]>("/api/conferences");
         setConferences(response.data);
       } catch (error) {
         console.error("Erreur lors du chargement des conférences", error);
@@ -56,13 +60,19 @@ export default function ConferenceRegistration() {
     setMessage(null);
 
     try {
-      const response = await axios.post("./api/register", data);
+      const response = await axios.post<ApiResponse>("/api/register", data);
       setMessage({ text: response.data.message, type: 'success' });
       reset();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erreur lors de l'inscription", error);
+      let errorMessage = "Une erreur est survenue lors de l'inscription";
+      
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+
       setMessage({
-        text: error.response?.data?.message || "Une erreur est survenue lors de l'inscription",
+        text: errorMessage,
         type: 'error'
       });
     } finally {
@@ -78,7 +88,7 @@ export default function ConferenceRegistration() {
             Inscription Conférence 
           </CardTitle>
           <CardTitle className="text-2xl font-bold text-center">
-            Carrefour etudiant
+            Carrefour étudiant
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -110,7 +120,7 @@ export default function ConferenceRegistration() {
               <Input
                 id="prenom"
                 {...register("prenom", { required: "Le prénom est obligatoire" })}
-                placeholder="Vos  prénoms"
+                placeholder="Vos prénoms"
               />
               {errors.prenom && (
                 <p className="text-sm text-red-600">{errors.prenom.message}</p>
