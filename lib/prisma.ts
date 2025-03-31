@@ -1,19 +1,16 @@
 import { PrismaClient } from '@prisma/client'
 
-// Déclaration étendue de globalThis avec TypeScript
+// Déclaration étendue de globalThis sans utiliser namespace
 declare global {
-  namespace NodeJS {
-    interface Global {
-      prisma?: PrismaClient;
-    }
-  }
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined
 }
 
 // Solution compatible avec TypeScript et Next.js
-const prisma: PrismaClient = (global as typeof globalThis & { prisma?: PrismaClient }).prisma || new PrismaClient();
+const prisma: PrismaClient = global.prisma || new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') {
-  (global as typeof globalThis & { prisma?: PrismaClient }).prisma = prisma;
+  global.prisma = prisma
 }
 
-export default prisma;
+export default prisma
