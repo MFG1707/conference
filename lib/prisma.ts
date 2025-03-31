@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 declare global {
   // Permet d'avoir une instance unique de PrismaClient dans l'application
-  var prisma: PrismaClient | undefined
+  let prisma: PrismaClient | undefined
 }
 
 const prisma = globalThis.prisma || new PrismaClient()
