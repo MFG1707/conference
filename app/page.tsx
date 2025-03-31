@@ -1,103 +1,206 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import axios from "axios";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface FormData {
+  nom: string;
+  prenom: string;
+  telephone: string;
+  email: string;
+  conferenceId: string;
+}
+
+interface Conference {
+  id: string;
+  date: Date;
+  titre: string;
+}
+
+export default function ConferenceRegistration() {
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<FormData>();
+
+  const [conferences, setConferences] = useState<Conference[]>([]);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchConferences = async () => {
+      try {
+        const response = await axios.get("./api/conferences");
+        setConferences(response.data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des conférences", error);
+        setMessage({ text: "Erreur lors du chargement des conférences", type: 'error' });
+      }
+    };
+
+    fetchConferences();
+  }, []);
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      const response = await axios.post("./api/register", data);
+      setMessage({ text: response.data.message, type: 'success' });
+      reset();
+    } catch (error: any) {
+      console.error("Erreur lors de l'inscription", error);
+      setMessage({
+        text: error.response?.data?.message || "Une erreur est survenue lors de l'inscription",
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            Inscription Conférence 
+          </CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Carrefour etudiant
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {message && (
+            <div className={`mb-4 p-3 rounded-md text-center ${
+              message.type === 'success' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {message.text}
+            </div>
+          )}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nom">Nom*</Label>
+              <Input
+                id="nom"
+                {...register("nom", { required: "Le nom est obligatoire" })}
+                placeholder="Votre nom"
+              />
+              {errors.nom && (
+                <p className="text-sm text-red-600">{errors.nom.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prenom">Prénom*</Label>
+              <Input
+                id="prenom"
+                {...register("prenom", { required: "Le prénom est obligatoire" })}
+                placeholder="Vos  prénoms"
+              />
+              {errors.prenom && (
+                <p className="text-sm text-red-600">{errors.prenom.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email*</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register("email", { 
+                  required: "L'email est obligatoire",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Adresse email invalide"
+                  }
+                })}
+                placeholder="votre@email.com"
+              />
+              {errors.email && (
+                <p className="text-sm text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="telephone">Téléphone*</Label>
+              <Input
+                id="telephone"
+                {...register("telephone", { 
+                  required: "Le téléphone est obligatoire",
+                  pattern: {
+                    value: /^[0-9]{10}$/,
+                    message: "Numéro de téléphone invalide (10 chiffres)"
+                  }
+                })}
+                placeholder="0197979797 par exemple"
+              />
+              {errors.telephone && (
+                <p className="text-sm text-red-600">{errors.telephone.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Conférence*</Label>
+              <Controller
+                name="conferenceId"
+                control={control}
+                rules={{ required: "Veuillez sélectionner une conférence" }}
+                render={({ field }) => (
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez une date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {conferences.map((conference) => (
+                        <SelectItem 
+                          key={conference.id} 
+                          value={conference.id}
+                        >
+                          {new Date(conference.date).toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })} - {conference.titre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.conferenceId && (
+                <p className="text-sm text-red-600">{errors.conferenceId.message}</p>
+              )}
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full mt-6"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Enregistrement..." : "S'inscrire"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
