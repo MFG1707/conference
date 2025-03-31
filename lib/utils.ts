@@ -5,8 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-interface CSVExportData {
-  [key: string]: string | number | boolean | null | undefined
+export interface CSVExportData {
+  [key: string]: string | number | boolean | Date | null | undefined
 }
 
 export function exportToCSV(data: CSVExportData[], filename: string) {

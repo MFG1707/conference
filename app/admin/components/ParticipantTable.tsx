@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,137 +19,239 @@ interface ParticipantWithConference extends Participant {
 }
 
 interface CSVParticipant {
+  [key: string]: string;
   Nom: string;
   Prénom: string;
   Email: string;
   Téléphone: string;
-  'Conférence': string;
-  'Date de la conférence': string;
-  'Date d\'inscription': string;
+  'Titre Conférence': string;
+  'Date Conférence': string;
+  'Date Inscription': string;
 }
 
+const formatDate = (date: Date | string, options: Intl.DateTimeFormatOptions = {}): string => {
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      ...options
+    });
+  } catch {
+    return 'N/A';
+  }
+};
+
 export default function ParticipantTable() {
-  const [participants, setParticipants] = useState<ParticipantWithConference[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dates, setDates] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>('');
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [participantsRes, conferencesRes] = await Promise.all([
-          fetch('/api/admin/participants'),
-          fetch('../api/conferences')
-        ]);
-
-        const participantsData = await participantsRes.json();
-        const conferencesData = await conferencesRes.json();
-
-        participantsData.sort((a: ParticipantWithConference, b: ParticipantWithConference) => 
-          a.nom.localeCompare(b.nom));
-
-        setParticipants(participantsData);
-        setDates(conferencesData);
-      } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const transformToCSVData = (data: ParticipantWithConference[]): CSVParticipant[] => {
-    return data.map(participant => ({
-      Nom: participant.nom,
-      Prénom: participant.prenom,
-      Email: participant.email,
-      Téléphone: participant.telephone,
-      'Conférence': participant.conference.titre,
-      'Date de la conférence': new Date(participant.conference.date).toLocaleDateString('fr-FR'),
-      'Date d\'inscription': new Date(participant.createdAt).toLocaleDateString('fr-FR')
-    }));
-  };
-
-  const filteredParticipants = participants.filter(participant => {
-    if (!selectedDate) return true;
-    return new Date(participant.conference.date).toISOString().split('T')[0] === selectedDate;
+  const [state, setState] = useState<{
+    participants: ParticipantWithConference[];
+    conferences: Conference[];
+    loading: boolean;
+    error: string | null;
+  }>({
+    participants: [],
+    conferences: [],
+    loading: true,
+    error: null
   });
 
-  const handleExport = () => {
-    if (filteredParticipants.length === 0) {
-      alert("Aucun participant à exporter");
+  const [selectedDate, setSelectedDate] = useState<string>('');
+
+  const fetchData = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      
+      const [participantsRes, conferencesRes] = await Promise.all([
+        fetch('/api/admin/participants'),
+        fetch('/api/conferences')
+      ]);
+
+      if (!participantsRes.ok) throw new Error('Failed to load participants');
+      if (!conferencesRes.ok) throw new Error('Failed to load conferences');
+
+      const [participantsData, conferencesData] = await Promise.all([
+        participantsRes.json(),
+        conferencesRes.json()
+      ]);
+
+      participantsData.sort((a: ParticipantWithConference, b: ParticipantWithConference) => 
+        a.nom.localeCompare(b.nom));
+
+      setState({
+        participants: participantsData,
+        conferences: conferencesData,
+        loading: false,
+        error: null
+      });
+    } catch (error) {
+      console.error("Fetch error:", error);
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const transformToCSVData = useCallback((data: ParticipantWithConference[]): CSVParticipant[] => {
+    return data.map(participant => ({
+      Nom: participant.nom || 'N/A',
+      Prénom: participant.prenom || 'N/A',
+      Email: participant.email || 'N/A',
+      Téléphone: participant.telephone || 'N/A',
+      'Titre Conférence': participant.conference?.titre || 'N/A',
+      'Date Conférence': participant.conference?.date 
+        ? formatDate(participant.conference.date)
+        : 'N/A',
+      'Date Inscription': participant.createdAt
+        ? formatDate(participant.createdAt)
+        : 'N/A'
+    }));
+  }, []);
+
+  const filteredParticipants = useCallback(() => {
+    if (!selectedDate) return state.participants;
+    return state.participants.filter(participant => 
+      participant.conference?.date 
+        ? new Date(participant.conference.date).toISOString().split('T')[0] === selectedDate
+        : false
+    );
+  }, [state.participants, selectedDate]);
+
+  const handleExport = useCallback(() => {
+    const currentParticipants = filteredParticipants();
+    if (currentParticipants.length === 0) {
+      alert("Aucun participant disponible pour l'export");
       return;
     }
-    exportToCSV(transformToCSVData(filteredParticipants), 'participants');
+    exportToCSV(transformToCSVData(currentParticipants), `participants_${formatDate(new Date(), { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}`);
+  }, [filteredParticipants, transformToCSVData]);
+
+  const renderTableBody = () => {
+    const currentParticipants = filteredParticipants();
+
+    if (state.loading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="text-center py-12">
+            <div className="flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              <span>Chargement des participants...</span>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (state.error) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="text-center py-8 text-destructive">
+            Erreur: {state.error}
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (currentParticipants.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+            {selectedDate 
+              ? 'Aucun participant inscrit pour cette conférence' 
+              : 'Aucun participant trouvé'}
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return currentParticipants.map((participant) => (
+      <TableRow key={participant.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+        <TableCell className="font-medium">{participant.nom}</TableCell>
+        <TableCell>{participant.prenom}</TableCell>
+        <TableCell className="text-blue-600 dark:text-blue-400">
+          <a href={`mailto:${participant.email}`} className="hover:underline">
+            {participant.email}
+          </a>
+        </TableCell>
+        <TableCell>
+          <a href={`tel:${participant.telephone}`} className="hover:underline">
+            {participant.telephone}
+          </a>
+        </TableCell>
+        <TableCell>{participant.conference?.titre}</TableCell>
+        <TableCell className="text-right">
+          {participant.conference?.date 
+            ? formatDate(participant.conference.date, {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+              })
+            : 'N/A'}
+        </TableCell>
+      </TableRow>
+    ));
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="grid w-full sm:max-w-sm items-center gap-1.5">
-          <Label htmlFor="date-filter">Filtrer par date</Label>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="grid w-full sm:max-w-md items-center gap-1.5">
+          <Label htmlFor="date-filter">Filtrer par date de conférence</Label>
           <select
             id="date-filter"
-            className="border rounded p-2 w-full"
+            className="border rounded-md p-2 w-full bg-background"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
+            disabled={state.loading}
           >
-            <option value="">Toutes les dates</option>
-            {dates.map(date => (
-              <option key={date} value={date}>
-                {new Date(date).toLocaleDateString('fr-FR')}
+            <option value="">Toutes les conférences</option>
+            {state.conferences.map(conference => (
+              <option 
+                key={conference.id} 
+                value={new Date(conference.date).toISOString().split('T')[0]}
+              >
+                {formatDate(conference.date, {
+                  weekday: 'long',
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric'
+                })} - {conference.titre}
               </option>
             ))}
           </select>
         </div>
+        
         <Button 
           onClick={handleExport}
-          disabled={loading || filteredParticipants.length === 0}
+          disabled={state.loading || filteredParticipants().length === 0}
+          variant="outline"
           className="w-full sm:w-auto"
         >
-          {loading ? 'Chargement...' : 'Exporter en CSV'}
+          {state.loading ? 'Chargement...' : '📤 Exporter en CSV'}
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-lg border overflow-hidden shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gray-50 dark:bg-gray-800">
             <TableRow>
-              <TableHead>Nom</TableHead>
+              <TableHead className="w-[150px]">Nom</TableHead>
               <TableHead>Prénom</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Téléphone</TableHead>
               <TableHead>Conférence</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">Chargement en cours...</TableCell>
-              </TableRow>
-            ) : filteredParticipants.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  {selectedDate ? 'Aucun participant pour cette date' : 'Aucun participant trouvé'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredParticipants.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell className="font-medium">{participant.nom}</TableCell>
-                  <TableCell>{participant.prenom}</TableCell>
-                  <TableCell>{participant.email}</TableCell>
-                  <TableCell>{participant.telephone}</TableCell>
-                  <TableCell>{participant.conference.titre}</TableCell>
-                  <TableCell>
-                    {new Date(participant.conference.date).toLocaleDateString('fr-FR')}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            {renderTableBody()}
           </TableBody>
         </Table>
       </div>
