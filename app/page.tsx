@@ -81,7 +81,7 @@ export default function ConferenceRegistration() {
           <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit">
             <div className="w-[250px] h-[150px] relative">
               <Image
-                src="/CARREFOUR ETUDIANT.jpg"
+                src="/carrefouretudiant.png"
                 alt="Logo Carrefour Étudiant"
                 fill
                 className="object-contain"
