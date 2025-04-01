@@ -78,7 +78,7 @@ export default function ConferenceRegistration() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
         {/* Colonne de gauche - Logo seulement */}
         <div className="w-full md:w-1/4 flex justify-center md:justify-start">
-          <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit">
+          <div className="bg-blue-50 to-indigo-100 p-6 rounded-xl shadow-lg sticky top-4 h-fit">
             <div className="w-[250px] h-[150px] relative">
               <Image
                 src="/carrefouretudiant.png"
