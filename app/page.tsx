@@ -78,7 +78,7 @@ export default function ConferenceRegistration() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
         {/* Colonne de gauche - Logo seulement */}
         <div className="w-full md:w-1/4 flex justify-center md:justify-start">
-          <div className="bg-blue-50 to-indigo-100 p-6 rounded-xl shadow-lg sticky top-4 h-fit">
+          <div className="bg-blue-600 to-indigo-600 p-6 rounded-xl shadow-lg sticky top-4 h-fit">
             <div className="w-[250px] h-[150px] relative">
               <Image
                 src="/carrefouretudiant.png"
@@ -96,7 +96,7 @@ export default function ConferenceRegistration() {
           {/* En-tête */}
           <header className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Carrefour Étudiant International
+              Carrefour Étudiant 
             </h1>
             <p className="text-lg text-gray-600">
               Ouvrez les portes de votre avenir académique à l&apos;étranger
@@ -256,7 +256,7 @@ export default function ConferenceRegistration() {
           </Card>
 
           <footer className="mt-12 text-center text-gray-600">
-            <p>© {new Date().getFullYear()} Carrefour Étudiant International - Tous droits réservés</p>
+            <p>© {new Date().getFullYear()} Carrefour Étudiant  - Tous droits réservés</p>
           </footer>
         </div>
       </div>
