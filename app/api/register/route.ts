@@ -5,11 +5,15 @@ import QRCode from "qrcode";
 
 const prisma = new PrismaClient();
 
+interface ConferenceEmailInfo {
+  titre: string;
+  date: Date;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { nom, prenom, telephone, email, conferenceId, motivation } = await req.json();
 
-    // Vérifier la conférence
     const conference = await prisma.conference.findUnique({
       where: { id: conferenceId }
     });
@@ -21,38 +25,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérifier email existant
     const existingParticipant = await prisma.participant.findUnique({
       where: { email }
     });
 
     if (existingParticipant) {
       return NextResponse.json(
-        { message: "Email déjà inscrit" },
+        { message: "Cet email est déjà inscrit" },
         { status: 400 }
       );
     }
 
-    // Générer QR Code
     const qrData = `${nom} ${prenom} | ${email} | ${conference.titre}`;
     const qrCodeUrl = await QRCode.toDataURL(qrData);
 
-    // Créer participant avec validation de type explicite
-    const participantData = {
-      nom,
-      prenom,
-      telephone,
-      email,
-      conferenceId,
-      qrCode: qrCodeUrl,
-      motivation
-    };
-
     await prisma.participant.create({
-      data: participantData
+      data: {
+        nom,
+        prenom,
+        telephone,
+        email,
+        conferenceId,
+        qrCode: qrCodeUrl,
+        motivation
+      }
     });
 
-    // Envoyer email
     const transporter = createTransport({
       service: "gmail",
       auth: {
@@ -64,8 +62,17 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Confirmation d'inscription",
-      html: generateEmailContent(nom, prenom, conference, motivation, qrCodeUrl)
+      subject: "Confirmation d&apos;inscription",
+      html: generateEmailContent(
+        nom,
+        prenom,
+        {
+          titre: conference.titre,
+          date: conference.date
+        },
+        motivation,
+        qrCodeUrl
+      )
     });
 
     return NextResponse.json({
@@ -75,16 +82,22 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Erreur:", error);
     return NextResponse.json(
-      { message: "Erreur lors de l'inscription" },
+      { message: "Erreur lors de l&apos;inscription" },
       { status: 500 }
     );
   }
 }
 
-function generateEmailContent(nom: string, prenom: string, conference: any, motivation: string, qrCodeUrl: string) {
+function generateEmailContent(
+  nom: string,
+  prenom: string,
+  conference: ConferenceEmailInfo,
+  motivation: string,
+  qrCodeUrl: string
+) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #2563eb;">Confirmation d'inscription</h2>
+      <h2 style="color: #2563eb;">Confirmation d&apos;inscription</h2>
       <p>Bonjour ${prenom} ${nom},</p>
       
       <h3>Détails de votre inscription :</h3>
@@ -95,10 +108,10 @@ function generateEmailContent(nom: string, prenom: string, conference: any, moti
       
       <div style="text-align: center; margin: 20px 0;">
         <img src="${qrCodeUrl}" alt="QR Code" style="width: 200px;"/>
-        <p style="font-size: 0.9rem;">Présentez ce QR Code à l'entrée</p>
+        <p style="font-size: 0.9rem;">Présentez ce QR Code à l&apos;entrée</p>
       </div>
       
-      <p>Cordialement,<br>L'équipe d'organisation</p>
+      <p>Cordialement,<br>L&apos;équipe d&apos;organisation</p>
     </div>
   `;
 }
