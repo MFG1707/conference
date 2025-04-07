@@ -17,6 +17,7 @@ interface FormData {
   telephone: string;
   email: string;
   conferenceId: string;
+  motivation: string;
 }
 
 interface Conference {
@@ -61,7 +62,7 @@ export default function ConferenceRegistration() {
       setMessage({ text: response.data.message, type: 'success' });
       reset();
     } catch (error) {
-      console.error("Erreur lors de l'inscription", error);
+      console.error("Erreur lors de l&apos;inscription", error);
       setMessage({
         text: axios.isAxiosError(error) 
           ? error.response?.data?.message || "Une erreur est survenue" 
@@ -76,10 +77,9 @@ export default function ConferenceRegistration() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
-        {/* Colonne de gauche - Logo seulement */}
         <div className="w-full md:w-1/4 flex justify-center md:justify-start">
           <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit">
-            <div className="w-[300px] h-[180px] relative"> {/* Taille agrandie 6x */}
+            <div className="w-[300px] h-[180px] relative">
               <Image
                 src="/images/carretudiant.jpg"
                 alt="Logo Carrefour Étudiant"
@@ -91,26 +91,23 @@ export default function ConferenceRegistration() {
           </div>
         </div>
 
-        {/* Colonne de droite - Tout le contenu */}
         <div className="w-full md:w-3/4">
-          {/* En-tête */}
           <header className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
               Carrefour Étudiant International
             </h1>
             <p className="text-lg text-gray-600">
-              Ouvrez les portes de votre avenir académique à l'étranger
+              Ouvrez les portes de votre avenir académique à l&apos;étranger
             </p>
           </header>
 
-          {/* Formulaire */}
           <Card className="shadow-xl border-0">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-gray-800">
                 Inscription à la Conférence
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Réservez votre place pour découvrir les opportunités d'études à l'international
+                Réservez votre place pour découvrir les opportunités d&apos;études à l&apos;international
               </CardDescription>
             </CardHeader>
             
@@ -160,7 +157,7 @@ export default function ConferenceRegistration() {
                     id="email"
                     type="email"
                     {...register("email", { 
-                      required: "L'email est obligatoire",
+                      required: "L&apos;email est obligatoire",
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                         message: "Adresse email invalide"
@@ -190,6 +187,25 @@ export default function ConferenceRegistration() {
                   />
                   {errors.telephone && (
                     <p className="text-sm text-red-600">{errors.telephone.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="motivation" className="text-gray-700">Motivation*</Label>
+                  <textarea
+                    id="motivation"
+                    {...register("motivation", { 
+                      required: "Veuillez indiquer votre motivation",
+                      minLength: {
+                        value: 20,
+                        message: "Votre motivation doit contenir au moins 20 caractères"
+                      }
+                    })}
+                    placeholder="Pourquoi souhaitez-vous participer à cette conférence ?"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+                  />
+                  {errors.motivation && (
+                    <p className="text-sm text-red-600">{errors.motivation.message}</p>
                   )}
                 </div>
 
@@ -247,7 +263,7 @@ export default function ConferenceRegistration() {
                     </span>
                   ) : (
                     <span className="flex items-center justify-center">
-                      S'inscrire à la conférence
+                      S&apos;inscrire à la conférence
                     </span>
                   )}
                 </Button>
