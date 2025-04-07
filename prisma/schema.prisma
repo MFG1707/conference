@@ -1,4 +1,3 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,22 +8,23 @@ datasource db {
 }
 
 model Participant {
-  id        String  @id @default(uuid())
-  nom       String
-  prenom    String
-  email     String  @unique
-  telephone String
+  id          String    @id @default(uuid())
+  nom         String
+  prenom      String
+  email       String    @unique
+  telephone   String
+  motivation  String
   conferenceId String
-  qrCode    String
-  createdAt DateTime @default(now())
+  qrCode      String
+  createdAt   DateTime  @default(now())
 
   conference Conference @relation(fields: [conferenceId], references: [id])
 }
 
 model Conference {
-  id         String  @id @default(uuid())
-  date       DateTime
-  titre      String
-  capacite   Int
+  id           String      @id @default(uuid())
+  date         DateTime
+  titre        String
+  capacite     Int
   participants Participant[]
 }
