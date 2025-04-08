@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
   try {
     const { nom, prenom, telephone, email, conferenceId, motivation } = await req.json();
 
-    // Validation des données
     if (!nom || !prenom || !telephone || !email || !conferenceId || !motivation) {
       return NextResponse.json(
         { success: false, message: "Tous les champs sont obligatoires" },
@@ -30,7 +29,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérification de la conférence
     const conference = await prisma.conference.findUnique({
       where: { id: conferenceId }
     });
@@ -42,26 +40,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérification des doublons
     const existingParticipant = await prisma.participant.findUnique({
       where: { email }
     });
 
     if (existingParticipant) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: "Cet email est déjà inscrit à cette conférence" 
+        {
+          success: false,
+          message: "Cet email est déjà inscrit à cette conférence"
         },
         { status: 400 }
       );
     }
 
-    // Génération du QR Code
-    const qrData = `${nom} ${prenom} | ${email} | ${conference.titre} | ${new Date().toISOString()}`;
+    // Utilise un thème fixe
+    const fixedTitre = "Explorez de nouveaux horizons pour mieux développer chez soi";
+
+    const qrData = `${nom} ${prenom} | ${email} | ${fixedTitre} | ${new Date().toISOString()}`;
     const qrCodeUrl = await QRCode.toDataURL(qrData);
 
-    // Enregistrement en base de données
     await prisma.participant.create({
       data: {
         nom,
@@ -75,7 +73,6 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Configuration du transporteur SMTP
     const transporter = createTransport({
       host: process.env.EMAIL_SERVER_HOST || "smtp.gmail.com",
       port: Number(process.env.EMAIL_SERVER_PORT) || 587,
@@ -85,11 +82,10 @@ export async function POST(req: NextRequest) {
         pass: process.env.EMAIL_SERVER_PASSWORD
       },
       tls: {
-        rejectUnauthorized: process.env.NODE_ENV === "production" // Désactivé en développement
+        rejectUnauthorized: process.env.NODE_ENV === "production"
       }
     });
 
-    // Envoi de l'email de confirmation
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || `Carrefour Étudiant <${process.env.EMAIL_SERVER_USER}>`,
       to: email,
@@ -98,7 +94,7 @@ export async function POST(req: NextRequest) {
         nom,
         prenom,
         {
-          titre: conference.titre,
+          titre: fixedTitre,
           date: conference.date
         },
         motivation,
@@ -113,13 +109,13 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error("Erreur lors de l'inscription:", error);
-    
-    const errorMessage = error instanceof Error 
-      ? error.message 
+
+    const errorMessage = error instanceof Error
+      ? error.message
       : "Une erreur inconnue est survenue";
 
     return NextResponse.json(
-      { 
+      {
         success: false,
         message: "Erreur lors du traitement de votre inscription",
         error: process.env.NODE_ENV === "development" ? errorMessage : undefined
@@ -151,7 +147,7 @@ function generateEmailContent(
         <h2 style="color: #2563eb; margin-bottom: 10px;">🎓 Confirmation d'inscription</h2>
         <p>Bonjour <strong>${prenom} ${nom}</strong>,</p>
         <p>Nous avons le plaisir de vous confirmer votre inscription à la conférence suivante :</p>
-        
+
         <div style="margin: 20px 0; padding: 20px; background: #f0f4ff; border-left: 5px solid #2563eb; border-radius: 5px;">
           <p><strong>📌 Thème :</strong> ${conference.titre}</p>
           <p><strong>📅 Date :</strong> ${formattedDate}</p>
@@ -171,10 +167,10 @@ function generateEmailContent(
 
         <p style="margin-top: 40px;">Cordialement,</p>
         <p><strong>📚 L'équipe du Carrefour Étudiant International</strong></p>
-        
+
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
         <p style="font-size: 0.9em; color: #888;">
-          Si vous avez des questions, n'hésitez pas à nous contacter à : 
+          Si vous avez des questions, n'hésitez pas à nous contacter à :
           <a href="mailto:${process.env.EMAIL_FROM || "carrefouretudiant229@gmail.com"}" style="color: #2563eb;">
             ${process.env.EMAIL_FROM || "carrefouretudiant229@gmail.com"}
           </a>
