@@ -5,6 +5,7 @@ CREATE TABLE "Participant" (
     "prenom" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "telephone" TEXT NOT NULL,
+    "motivation" TEXT NOT NULL,
     "conferenceId" TEXT NOT NULL,
     "qrCode" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
