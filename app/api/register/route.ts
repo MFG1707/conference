@@ -14,9 +14,10 @@ export async function POST(req: NextRequest) {
   try {
     const { nom, prenom, telephone, email, conferenceId, motivation } = await req.json();
 
+    // Validation des données
     if (!nom || !prenom || !telephone || !email || !conferenceId || !motivation) {
       return NextResponse.json(
-        { message: "Tous les champs sont obligatoires" },
+        { success: false, message: "Tous les champs sont obligatoires" },
         { status: 400 }
       );
     }
@@ -24,36 +25,43 @@ export async function POST(req: NextRequest) {
     const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { message: "Adresse email invalide" },
+        { success: false, message: "Adresse email invalide" },
         { status: 400 }
       );
     }
 
+    // Vérification de la conférence
     const conference = await prisma.conference.findUnique({
       where: { id: conferenceId }
     });
 
     if (!conference) {
       return NextResponse.json(
-        { message: "Conférence non trouvée" },
+        { success: false, message: "Conférence non trouvée" },
         { status: 404 }
       );
     }
 
+    // Vérification des doublons
     const existingParticipant = await prisma.participant.findUnique({
       where: { email }
     });
 
     if (existingParticipant) {
       return NextResponse.json(
-        { message: "Cet email est déjà inscrit à cette conférence" },
+        { 
+          success: false, 
+          message: "Cet email est déjà inscrit à cette conférence" 
+        },
         { status: 400 }
       );
     }
 
+    // Génération du QR Code
     const qrData = `${nom} ${prenom} | ${email} | ${conference.titre} | ${new Date().toISOString()}`;
     const qrCodeUrl = await QRCode.toDataURL(qrData);
 
+    // Enregistrement en base de données
     await prisma.participant.create({
       data: {
         nom,
@@ -67,6 +75,7 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Configuration du transporteur SMTP
     const transporter = createTransport({
       host: process.env.EMAIL_SERVER_HOST || "smtp.gmail.com",
       port: Number(process.env.EMAIL_SERVER_PORT) || 587,
@@ -76,12 +85,13 @@ export async function POST(req: NextRequest) {
         pass: process.env.EMAIL_SERVER_PASSWORD
       },
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: process.env.NODE_ENV === "production" // Désactivé en développement
       }
     });
 
+    // Envoi de l'email de confirmation
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER,
+      from: process.env.EMAIL_FROM || `Carrefour Étudiant <${process.env.EMAIL_SERVER_USER}>`,
       to: email,
       subject: "🎓 Confirmation d'inscription - Carrefour Étudiant",
       html: generateEmailContent(
@@ -101,19 +111,18 @@ export async function POST(req: NextRequest) {
       message: "Inscription réussie ! Un email de confirmation a été envoyé."
     });
 
-  } catch (error: unknown) {
-    console.error("Erreur complète:", error);
-
-    const errorMessage = "Une erreur est survenue lors de l'inscription";
+  } catch (error) {
+    console.error("Erreur lors de l'inscription:", error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : "Une erreur inconnue est survenue";
 
     return NextResponse.json(
-      {
+      { 
         success: false,
-        message: errorMessage,
-        error:
-          process.env.NODE_ENV === "development" && error instanceof Error
-            ? error.message
-            : undefined
+        message: "Erreur lors du traitement de votre inscription",
+        error: process.env.NODE_ENV === "development" ? errorMessage : undefined
       },
       { status: 500 }
     );
@@ -142,6 +151,7 @@ function generateEmailContent(
         <h2 style="color: #2563eb; margin-bottom: 10px;">🎓 Confirmation d'inscription</h2>
         <p>Bonjour <strong>${prenom} ${nom}</strong>,</p>
         <p>Nous avons le plaisir de vous confirmer votre inscription à la conférence suivante :</p>
+        
         <div style="margin: 20px 0; padding: 20px; background: #f0f4ff; border-left: 5px solid #2563eb; border-radius: 5px;">
           <p><strong>📌 Thème :</strong> ${conference.titre}</p>
           <p><strong>📅 Date :</strong> ${formattedDate}</p>
@@ -160,9 +170,15 @@ function generateEmailContent(
         <p>Nous avons hâte de vous accueillir lors de cet événement enrichissant.</p>
 
         <p style="margin-top: 40px;">Cordialement,</p>
-        <p><strong>📚 L’équipe du Carrefour Étudiant International</strong></p>
+        <p><strong>📚 L'équipe du Carrefour Étudiant International</strong></p>
+        
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
-        <p style="font-size: 0.9em; color: #888;">Si vous avez des questions, n'hésitez pas à nous contacter à : <a href="mailto:${process.env.EMAIL_FROM || "carrefour@example.com"}" style="color: #2563eb;">${process.env.EMAIL_FROM || "carrefour@example.com"}</a></p>
+        <p style="font-size: 0.9em; color: #888;">
+          Si vous avez des questions, n'hésitez pas à nous contacter à : 
+          <a href="mailto:${process.env.EMAIL_FROM || "carrefouretudiant229@gmail.com"}" style="color: #2563eb;">
+            ${process.env.EMAIL_FROM || "carrefouretudiant229@gmail.com"}
+          </a>
+        </p>
       </div>
     </div>
   `;
