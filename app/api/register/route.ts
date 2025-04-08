@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Utilise un thème fixe
-    const fixedTitre = "Explorez de nouveaux horizons pour mieux développer chez soi";
+    const fixedTitre = "Explorez de nouveaux horizons pour mieux développer chez soi.";
 
     const qrData = `${nom} ${prenom} | ${email} | ${fixedTitre} | ${new Date().toISOString()}`;
     const qrCodeUrl = await QRCode.toDataURL(qrData);
