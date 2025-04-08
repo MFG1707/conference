@@ -69,17 +69,17 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Configuration SMTP plus robuste
+    // Configuration SMTP
     const transporter = createTransport({
       host: process.env.EMAIL_SERVER_HOST || "smtp.gmail.com",
       port: Number(process.env.EMAIL_SERVER_PORT) || 587,
-      secure: false, // true pour le port 465
+      secure: false,
       auth: {
         user: process.env.EMAIL_SERVER_USER,
         pass: process.env.EMAIL_SERVER_PASSWORD
       },
       tls: {
-        rejectUnauthorized: false // Nécessaire pour certains environnements
+        rejectUnauthorized: false
       }
     });
 
@@ -105,19 +105,19 @@ export async function POST(req: NextRequest) {
       message: "Inscription réussie ! Un email de confirmation a été envoyé."
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Erreur complète:", error);
-    
+
     let errorMessage = "Une erreur est survenue lors de l'inscription";
-    if (error instanceof Error) {
-      errorMessage += `: ${error.message}`;
-    }
 
     return NextResponse.json(
-      { 
+      {
         success: false,
         message: errorMessage,
-        error: process.env.NODE_ENV === "development" ? error.message : undefined
+        error:
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.message
+            : undefined
       },
       { status: 500 }
     );
@@ -131,13 +131,13 @@ function generateEmailContent(
   motivation: string,
   qrCodeUrl: string
 ) {
-  const formattedDate = new Date(conference.date).toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  const formattedDate = new Date(conference.date).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 
   return `
@@ -171,7 +171,7 @@ function generateEmailContent(
       <div style="font-size: 0.9rem; color: #777; border-top: 1px solid #eee; padding-top: 15px;">
         <p>Cordialement,</p>
         <p><strong>L'équipe du Carrefour Étudiant International</strong></p>
-        <p>Contact : ${process.env.EMAIL_FROM || 'carrefouretudiant229@gmail.com'}</p>
+        <p>Contact : ${process.env.EMAIL_FROM || 'carrefour@example.com'}</p>
       </div>
     </div>
   `;
