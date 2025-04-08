@@ -79,9 +79,9 @@ export default function ConferenceRegistration() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-1/4 flex justify-center md:justify-start">
           <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit">
-            <div className="w-[300px] h-[180px] relative">
+          <div className="w-[300px] h-[180px] relative">
               <Image
-                src="/images/carretudiant.jpg"
+                src="/carretudiant.jpg"  // Chemin modifié ici
                 alt="Logo Carrefour Étudiant"
                 fill
                 className="object-contain"
