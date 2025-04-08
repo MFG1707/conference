@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
   try {
     const { nom, prenom, telephone, email, conferenceId, motivation } = await req.json();
 
-    // Validation des données requises
     if (!nom || !prenom || !telephone || !email || !conferenceId || !motivation) {
       return NextResponse.json(
         { message: "Tous les champs sont obligatoires" },
@@ -22,7 +21,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérification du format email
     const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -69,7 +67,6 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Configuration SMTP
     const transporter = createTransport({
       host: process.env.EMAIL_SERVER_HOST || "smtp.gmail.com",
       port: Number(process.env.EMAIL_SERVER_PORT) || 587,
@@ -83,11 +80,10 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Envoi de l'email
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER,
       to: email,
-      subject: "Confirmation d'inscription - Carrefour Étudiant",
+      subject: "🎓 Confirmation d'inscription - Carrefour Étudiant",
       html: generateEmailContent(
         nom,
         prenom,
@@ -108,7 +104,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error("Erreur complète:", error);
 
-    let errorMessage = "Une erreur est survenue lors de l'inscription";
+    const errorMessage = "Une erreur est survenue lors de l'inscription";
 
     return NextResponse.json(
       {
@@ -141,37 +137,32 @@ function generateEmailContent(
   });
 
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-      <h2 style="color: #2563eb; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-        Confirmation d'inscription
-      </h2>
-      
-      <p>Bonjour ${prenom} ${nom},</p>
-      
-      <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <h3 style="margin-top: 0;">Détails de votre inscription :</h3>
-        <p><strong>Conférence :</strong> ${conference.titre}</p>
-        <p><strong>Date :</strong> ${formattedDate}</p>
-      </div>
-      
-      <div style="margin: 20px 0;">
-        <h4>Votre motivation :</h4>
-        <p style="background: #fff; padding: 10px; border-left: 3px solid #2563eb;">
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: auto; padding: 20px; background: #f4f4f4; border-radius: 8px; color: #333;">
+      <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h2 style="color: #2563eb; margin-bottom: 10px;">🎓 Confirmation d'inscription</h2>
+        <p>Bonjour <strong>${prenom} ${nom}</strong>,</p>
+        <p>Nous avons le plaisir de vous confirmer votre inscription à la conférence suivante :</p>
+        <div style="margin: 20px 0; padding: 20px; background: #f0f4ff; border-left: 5px solid #2563eb; border-radius: 5px;">
+          <p><strong>📌 Thème :</strong> ${conference.titre}</p>
+          <p><strong>📅 Date :</strong> ${formattedDate}</p>
+        </div>
+
+        <p><strong>💬 Votre motivation :</strong></p>
+        <blockquote style="margin: 10px 0; padding: 10px 20px; background: #fff; border-left: 3px solid #2563eb; font-style: italic;">
           ${motivation}
-        </p>
-      </div>
-      
-      <div style="text-align: center; margin: 25px 0;">
-        <img src="${qrCodeUrl}" alt="QR Code d'accès" style="width: 200px; height: 200px; border: 1px solid #eee; padding: 10px; background: white;"/>
-        <p style="font-size: 0.9rem; color: #666;">
-          Présentez ce QR Code à l'entrée de la conférence
-        </p>
-      </div>
-      
-      <div style="font-size: 0.9rem; color: #777; border-top: 1px solid #eee; padding-top: 15px;">
-        <p>Cordialement,</p>
-        <p><strong>L'équipe du Carrefour Étudiant International</strong></p>
-        <p>Contact : ${process.env.EMAIL_FROM || 'carrefour@example.com'}</p>
+        </blockquote>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <img src="${qrCodeUrl}" alt="QR Code d'accès" style="width: 200px; height: 200px; background: white; border: 1px solid #ddd; padding: 10px;" />
+          <p style="color: #666; margin-top: 10px;">Présentez ce QR Code à l'entrée de la conférence</p>
+        </div>
+
+        <p>Nous avons hâte de vous accueillir lors de cet événement enrichissant.</p>
+
+        <p style="margin-top: 40px;">Cordialement,</p>
+        <p><strong>📚 L’équipe du Carrefour Étudiant International</strong></p>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
+        <p style="font-size: 0.9em; color: #888;">Si vous avez des questions, n'hésitez pas à nous contacter à : <a href="mailto:${process.env.EMAIL_FROM || "carrefour@example.com"}" style="color: #2563eb;">${process.env.EMAIL_FROM || "carrefour@example.com"}</a></p>
       </div>
     </div>
   `;
