@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma"; // Utilise l'instance unique de Prisma
+import prisma from "@/lib/prisma";
 
-export const dynamic = "force-dynamic"; // Empêche la mise en cache côté serveur
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -14,16 +14,15 @@ export async function GET() {
     });
 
     return NextResponse.json(conferences);
-  } catch (error: any) {
-    // Log complet côté serveur
-    console.error("Erreur lors de la récupération des conférences :", error);
+  } catch (error: unknown) {
+    // Vérifie si c’est une vraie erreur JS avec un message
+    const message =
+      error instanceof Error ? error.message : "Erreur inconnue";
 
-    // Réponse avec plus de détails pour le debug
+    console.error("Erreur lors de la récupération des conférences :", message);
+
     return NextResponse.json(
-      {
-        message: "Erreur serveur",
-        error: error?.message || "Erreur inconnue",
-      },
+      { message: "Erreur serveur", error: message },
       { status: 500 }
     );
   }
