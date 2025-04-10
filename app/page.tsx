@@ -210,7 +210,7 @@ export default function ConferenceRegistration() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Conférence*</Label>
+                  <Label className="text-gray-700">Conférence*  Veuillez bien choisir votre date</Label>
                   <Controller
                     name="conferenceId"
                     control={control}
